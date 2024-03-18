@@ -2,6 +2,7 @@ use std::{
     collections::{BTreeMap, VecDeque},
     fmt::Display,
 };
+use colored::*;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Trie<T> {
@@ -57,7 +58,7 @@ impl<T> Trie<T> {
     {
         println!("{}", f(self.value.as_ref()));
         for (key, value) in &self.children {
-            print!("{}\u{2514} {}: ", " ".repeat(indent + 1), key);
+            print!("{}\u{2514} {}: ", " ".repeat(indent + 1), key.bold());
             value.pretty_print(f, indent + 1);
         }
     }

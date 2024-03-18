@@ -1,12 +1,13 @@
 use async_recursion::async_recursion;
+use colored::*;
 use std::{
     env, fs,
     path::{Path, PathBuf},
     process::Command,
     str::FromStr,
-    sync::Arc,
+    sync::{Arc, Mutex},
 };
-use tokio::{sync::Mutex, task::JoinSet};
+use tokio::task::JoinSet;
 use trie::{translate, Trie};
 
 mod trie;
@@ -24,19 +25,24 @@ async fn main() {
 }
 
 async fn print_results(root_path: PathBuf, bitrates: Arc<Mutex<Trie<(u32, u32)>>>) {
-    let lock = bitrates.lock().await;
+    let lock = bitrates.lock().unwrap();
     let trie = lock.get(translate(root_path.to_string_lossy().to_string(), '\\'));
     if trie.is_none() {
         println!("No video files found.");
     } else {
         print!(
             "{}: ",
-            root_path.file_name().unwrap().to_string_lossy().to_string()
+            root_path
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .to_string()
+                .bold()
         );
         trie.unwrap().pretty_print(
             |o| {
-                o.map_or("Untracked".to_string(), |(sum, count)| {
-                    format!("{} kb/s", sum.checked_div(*count).unwrap_or(0))
+                o.map_or("Untracked".to_string().red(), |(sum, count)| {
+                    format!("{} kb/s", sum.checked_div(*count).unwrap_or(0)).green()
                 })
             },
             0,
@@ -72,7 +78,7 @@ async fn visit_folder(path: PathBuf, bitrates: Arc<Mutex<Trie<(u32, u32)>>>) -> 
     if count != 0 {
         bitrates
             .lock()
-            .await
+            .unwrap()
             .set(translate(path.to_string_lossy(), '\\'), (sum, count));
     }
 
